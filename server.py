@@ -1,5 +1,7 @@
 #  coding: utf-8 
 import socketserver
+import os
+
 
 # Copyright 2013 Abram Hindle, Eddie Antonio Santos
 # 
@@ -28,11 +30,74 @@ import socketserver
 
 
 class MyWebServer(socketserver.BaseRequestHandler):
-    
+
+    def notFound(self, httpVersion):
+        statusCode = "404 NOT FOUND"
+        with open('www/error404.html') as myFile:
+            return f"{httpVersion} {statusCode}\r\nContent-Type: {'text/html'}\n\n{myFile.read()}"
+
+    def determineRequest(self, headers):
+        request_lines = headers.split('\n')
+        requestPath = request_lines[0].strip().split(' ')
+
+        ending = ''
+        statusCode = ""
+        request = requestPath[0]
+        filePath = requestPath[1]
+        httpVersion = requestPath[2]
+
+        if 'etc' in filePath or 'group' in filePath:
+            return self.notFound(httpVersion)
+
+        if request != 'GET':
+            statusCode = '405 NoT FOUND'
+            return f"{httpVersion} {statusCode}\r\n"
+
+        if filePath[-1] == '/':
+            ending = 'index.html'
+
+        #  base index
+
+        try:
+            with open(f"www{filePath}{ending}") as myFile:
+                if '.' in filePath:
+                    temp = filePath.split(".")
+                    if temp[1] == 'css':
+                        contentType = 'text/css'
+                    elif temp[1] == 'html':
+                        contentType = 'text/html'
+                if ending == 'index.html':
+                    contentType = 'text/html'
+                fileInfo = myFile.read()
+                statusCode = "200 OK"
+                return f"{httpVersion} {statusCode}\r\nContent-Type: {contentType}\n\n{fileInfo}"
+
+        except FileNotFoundError:
+            return self.notFound(httpVersion)
+
+        except Exception:
+            pass
+
+        try:
+            with open(f"www{filePath}") as myFile1:
+                myFile1.read()
+        except OSError as e:
+            if e.errno == 21:
+                if filePath[-1] != '/':
+                    statusCode = '301 Moved Permanently'
+                    filePath += '/'
+                    return f"{httpVersion} {statusCode}\r\nLocation: http://127.0.0.1:8080{filePath}"
+            return self.notFound(httpVersion)
+        except Exception as e:
+            print(e)
+
     def handle(self):
-        self.data = self.request.recv(1024).strip()
-        print ("Got a request of: %s\n" % self.data)
-        self.request.sendall(bytearray("OK",'utf-8'))
+        self.data = self.request.recv(1024).strip().decode()
+        # print(f"Got a request of: {self.data}\n")
+        response = self.determineRequest(self.data)
+
+        self.request.sendall(bytearray(response, 'utf-8'))
+
 
 if __name__ == "__main__":
     HOST, PORT = "localhost", 8080
