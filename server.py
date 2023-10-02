@@ -32,16 +32,16 @@ import os
 class MyWebServer(socketserver.BaseRequestHandler):
 
     def notFound(self, httpVersion):
-        statusCode = "404 NOT FOUND"
+        statusCode = '404 NOT FOUND'
         with open('www/error404.html') as myFile:
-            return f"{httpVersion} {statusCode}\r\nContent-Type: {'text/html'}\n\n{myFile.read()}"
+            return f'{httpVersion} {statusCode}\r\nContent-Type: {"text/html"}\n\n{myFile.read()}'
 
     def determineRequest(self, headers):
         request_lines = headers.split('\n')
         requestPath = request_lines[0].strip().split(' ')
 
 
-        # statusCode = ""
+        # statusCode = ''
         request = ''
         filePath = ''
         httpVersion = ''
@@ -59,7 +59,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
 
         if request != 'GET':
             statusCode = '405 NoT FOUND'
-            return f"{httpVersion} {statusCode}\r\n"
+            return f'{httpVersion} {statusCode}\r\n'
 
         if filePath[-1] == '/' or filePath == '/':
             filePath += 'index.html'
@@ -67,9 +67,9 @@ class MyWebServer(socketserver.BaseRequestHandler):
         #  base index
 
         try:
-            with open(f"www{filePath}") as myFile:
+            with open(f'www{filePath}') as myFile:
                 if '.' in filePath:
-                    temp = filePath.split(".")
+                    temp = filePath.split('.')
                     if temp[1] == 'css':
                         contentType = 'text/css'
                     elif temp[1] == 'html':
@@ -77,8 +77,8 @@ class MyWebServer(socketserver.BaseRequestHandler):
                 # if ending == 'index.html':
                 #     contentType = 'text/html'
                 fileInfo = myFile.read()
-                statusCode = "200 OK"
-                return f"{httpVersion} {statusCode}\r\nContent-Type: {contentType}\n\n{fileInfo}"
+                statusCode = '200 OK'
+                return f'{httpVersion} {statusCode}\r\nContent-Type: {contentType}\n\n{fileInfo}'
 
         except FileNotFoundError:
             return self.notFound(httpVersion)
@@ -87,21 +87,20 @@ class MyWebServer(socketserver.BaseRequestHandler):
             pass
 
         try:
-            with open(f"www{filePath}") as myFile1:
+            with open(f'www{filePath}') as myFile1:
                 myFile1.read()
         except OSError as e:
             if e.errno == 21:
                 if filePath[-1] != '/':
                     statusCode = '301 Moved Permanently'
                     filePath += '/'
-                    return f"{httpVersion} {statusCode}\r\nLocation: http://127.0.0.1:8080{filePath}"
+                    return f'{httpVersion} {statusCode}\r\nLocation: http://127.0.0.1:8080{filePath}'
             return self.notFound(httpVersion)
         except Exception as e:
             print(e)
 
     def handle(self):
         self.data = self.request.recv(1024).strip().decode()
-        # print(f"Got a request of: {self.data}\n")
         response = self.determineRequest(self.data)
 
         self.request.sendall(bytearray(response, 'utf-8'))
