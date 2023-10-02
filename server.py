@@ -42,17 +42,15 @@ class MyWebServer(socketserver.BaseRequestHandler):
 
 
         # statusCode = ''
-        request = ''
         filePath = ''
-        httpVersion = ''
+        request = requestPath[0]
         try:
-            request = requestPath[0]
             filePath = requestPath[1]
-            httpVersion = requestPath[2]
         except IndexError:
             filePath = '/'
         except Exception:
             pass
+        httpVersion = requestPath[2]
 
         if 'etc' in filePath or 'group' in filePath:
             return self.notFound(httpVersion)
