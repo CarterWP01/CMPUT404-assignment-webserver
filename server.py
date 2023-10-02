@@ -40,11 +40,19 @@ class MyWebServer(socketserver.BaseRequestHandler):
         request_lines = headers.split('\n')
         requestPath = request_lines[0].strip().split(' ')
 
-        ending = ''
-        statusCode = ""
-        request = requestPath[0]
-        filePath = requestPath[1]
-        httpVersion = requestPath[2]
+
+        # statusCode = ""
+        request = ''
+        filePath = ''
+        httpVersion = ''
+        try:
+            request = requestPath[0]
+            filePath = requestPath[1]
+            httpVersion = requestPath[2]
+        except IndexError:
+            filePath = '/'
+        except Exception:
+            pass
 
         if 'etc' in filePath or 'group' in filePath:
             return self.notFound(httpVersion)
@@ -53,21 +61,21 @@ class MyWebServer(socketserver.BaseRequestHandler):
             statusCode = '405 NoT FOUND'
             return f"{httpVersion} {statusCode}\r\n"
 
-        if filePath[-1] == '/':
-            ending = 'index.html'
+        if filePath[-1] == '/' or filePath == '/':
+            filePath += 'index.html'
 
         #  base index
 
         try:
-            with open(f"www{filePath}{ending}") as myFile:
+            with open(f"www{filePath}") as myFile:
                 if '.' in filePath:
                     temp = filePath.split(".")
                     if temp[1] == 'css':
                         contentType = 'text/css'
                     elif temp[1] == 'html':
                         contentType = 'text/html'
-                if ending == 'index.html':
-                    contentType = 'text/html'
+                # if ending == 'index.html':
+                #     contentType = 'text/html'
                 fileInfo = myFile.read()
                 statusCode = "200 OK"
                 return f"{httpVersion} {statusCode}\r\nContent-Type: {contentType}\n\n{fileInfo}"
